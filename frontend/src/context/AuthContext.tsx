@@ -72,7 +72,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     try {
     setIsLoading(true);
-    await axios.post(`${URL}/logout`, {}, {
+    await axios.post(`${URL}/user/logout`, {}, {
       withCredentials: true,
     });
     setUser(null);
