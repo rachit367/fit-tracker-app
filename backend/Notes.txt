@@ -1,2 +1,0 @@
-cookies => _id:_id,email:email
-new Date().getTime() == Date.now();

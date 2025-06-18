@@ -1,20 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useWorkouts } from '../../context/WorkoutContext';
 import { useAuth } from '../../context/AuthContext';
 import { WorkoutBuilder } from './WorkoutBuilder';
 import { ExerciseCard } from './ExerciseCard';
 import { getWorkoutXp } from '../../data/achievements';
 import { MUSCLE_GROUPS } from '../../types/fitness';
-import { Plus, Calendar, Clock, Target, Zap, Trophy, CheckCircle } from 'lucide-react';
+import { Plus, Calendar, Clock, Target, Zap, Trophy, CheckCircle, Loader2 } from 'lucide-react';
 import axios from 'axios';
 const URL=import.meta.env.VITE_BACKEND_URL;
+
+interface ExerciseUpdate {
+  sets?: Array<{
+    weight?: number;
+    reps?: number;
+    completed?: boolean;
+  }>;
+  notes?: string;
+  completed?: boolean;
+}
 
 export const TodaysWorkout: React.FC = () => {
   const { getTodaysWorkout, updateWorkout, getThisWeeksWorkouts } = useWorkouts();
   const { user, addXp, updateProfile, checkAchievements } = useAuth();
   const [showBuilder, setShowBuilder] = useState(false);
   const todaysWorkout = getTodaysWorkout();
-
+  const [isCompleting, setIsCompleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const workoutContainerRef = useRef<HTMLDivElement>(null);
 
   const getRecommendedMuscleGroup = () => {
     const thisWeeksWorkouts = getThisWeeksWorkouts();
@@ -42,36 +54,49 @@ export const TodaysWorkout: React.FC = () => {
 
   const recommendedMuscleGroup = getRecommendedMuscleGroup();
 
-  const handleUpdateExercise = (exerciseId: string, updates: any) => {
+  const handleUpdateExercise = (exerciseId: string, updates: ExerciseUpdate) => {
     if (todaysWorkout) {
+      const scrollPosition = window.scrollY;
       const updatedExercises = todaysWorkout.exercises.map(exercise =>
         exercise._id === exerciseId ? { ...exercise, ...updates } : exercise
       );
-      updateWorkout(todaysWorkout._id, { exercises: updatedExercises });
+      updateWorkout(todaysWorkout._id, { exercises: updatedExercises })
+        .then(() => {
+          requestAnimationFrame(() => {
+            window.scrollTo(0, scrollPosition);
+          });
+        })
+        .catch((err) => {
+          setError('Failed to update exercise. Please try again.');
+          console.error('Error updating exercise:', err);
+        });
     }
   };
 
-  const handleCompleteWorkout = () => {
+  const handleCompleteWorkout = async () => {
     if (todaysWorkout && user) {
-      const xpEarned = getWorkoutXp(todaysWorkout.exercises.length, true);
-      
-      updateWorkout(todaysWorkout._id, { 
-        completed: true,
-        xpEarned 
-      });
-      
-
-      
-      const update=async()=>{
-        await axios.get(`${URL}/`)
-      };
-      update();
-  
-      addXp(xpEarned);
-      
-      setTimeout(() => {
-        checkAchievements();
-      }, 500);
+      try {
+        setIsCompleting(true);
+        setError(null);
+        const xpEarned = getWorkoutXp(todaysWorkout.exercises.length, true);
+        
+        await updateWorkout(todaysWorkout._id, { 
+          completed: true,
+          xpEarned 
+        });
+        
+        await axios.get(`${URL}/workout/todaysworkout`, { withCredentials: true });
+        addXp(xpEarned);
+        
+        setTimeout(() => {
+          checkAchievements();
+        }, 500);
+      } catch (err) {
+        setError('Failed to complete workout. Please try again.');
+        console.error('Error completing workout:', err);
+      } finally {
+        setIsCompleting(false);
+      }
     }
   };
 
@@ -136,7 +161,7 @@ export const TodaysWorkout: React.FC = () => {
   const potentialXp = getWorkoutXp(todaysWorkout.exercises.length, true);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" ref={workoutContainerRef}>
       {/* Enhanced Workout Header */}
       <div className="bg-gradient-to-br from-white to-blue-50 dark:from-gray-800 dark:to-blue-900/20 rounded-2xl shadow-xl p-6 border border-blue-200 dark:border-blue-800">
         <div className="flex items-center justify-between mb-6">
@@ -222,12 +247,27 @@ export const TodaysWorkout: React.FC = () => {
       {/* Complete Workout Button */}
       {!todaysWorkout.completed && completedExercises === todaysWorkout.exercises.length && (
         <div className="text-center py-6">
+          {error && (
+            <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg">
+              {error}
+            </div>
+          )}
           <button
             onClick={handleCompleteWorkout}
-            className="bg-gradient-to-r from-green-500 to-blue-500 text-white px-8 py-4 rounded-xl font-medium hover:from-green-600 hover:to-blue-600 transition-all duration-300 transform hover:scale-105 shadow-lg inline-flex items-center"
+            disabled={isCompleting}
+            className="bg-gradient-to-r from-green-500 to-blue-500 text-white px-8 py-4 rounded-xl font-medium hover:from-green-600 hover:to-blue-600 transition-all duration-300 transform hover:scale-105 shadow-lg inline-flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Trophy className="w-5 h-5 mr-2" />
-            Complete Workout & Earn {potentialXp} XP
+            {isCompleting ? (
+              <>
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                Completing Workout...
+              </>
+            ) : (
+              <>
+                <Trophy className="w-5 h-5 mr-2" />
+                Complete Workout & Earn {potentialXp} XP
+              </>
+            )}
           </button>
         </div>
       )}

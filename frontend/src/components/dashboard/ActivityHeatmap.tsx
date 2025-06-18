@@ -55,7 +55,7 @@ export const ActivityHeatmap: React.FC = () => {
 
   const heatmapData = generateHeatmapData();
   
-  // Group data by weeks (13 weeks)
+
   const weeklyData = [];
   for (let i = 0; i < heatmapData.length; i += 7) {
     weeklyData.push(heatmapData.slice(i, i + 7));
@@ -113,12 +113,12 @@ export const ActivityHeatmap: React.FC = () => {
         </div>
       </div>
       
-      {/* Heatmap Grid */}
+  
       <div className="bg-gradient-to-br from-gray-50 to-green-50 dark:from-gray-700 dark:to-green-900/20 p-6 rounded-xl overflow-x-auto">
         <div className="flex space-x-1 min-w-max">
-          {/* Day labels */}
+          
           <div className="flex flex-col space-y-1 mr-3">
-            <div className="h-4"></div> {/* Spacer for month labels */}
+            <div className="h-4"></div> 
             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, index) => (
               <div key={day} className="h-4 text-xs text-gray-500 dark:text-gray-400 flex items-center font-medium">
                 {index % 2 === 1 ? day : ''}
@@ -126,10 +126,10 @@ export const ActivityHeatmap: React.FC = () => {
             ))}
           </div>
           
-          {/* Heatmap weeks */}
+       
           {weeklyData.map((week, weekIndex) => (
             <div key={weekIndex} className="flex flex-col space-y-1">
-              {/* Month label */}
+            
               <div className="h-4 text-xs text-gray-600 dark:text-gray-400 text-center font-medium">
                 {weekIndex % 4 === 0 && week[0] ? 
                   new Date(week[0].date).toLocaleDateString('en-US', { month: 'short' }) : 
@@ -137,7 +137,7 @@ export const ActivityHeatmap: React.FC = () => {
                 }
               </div>
               
-              {/* Week days */}
+              
               {Array.from({ length: 7 }, (_, dayIndex) => {
                 const dayData = week[dayIndex];
                 if (!dayData) {
@@ -164,9 +164,9 @@ export const ActivityHeatmap: React.FC = () => {
         </div>
       </div>
       
-      {/* Legend and Stats */}
+  
       <div className="mt-6 space-y-4">
-        {/* Legend */}
+    
         <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
           <span className="font-medium">Less active</span>
           <div className="flex items-center space-x-1">
@@ -178,7 +178,7 @@ export const ActivityHeatmap: React.FC = () => {
           </div>
         </div>
         
-        {/* Stats */}
+
         <div className="grid grid-cols-3 gap-4">
           <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-xl border border-blue-200 dark:border-blue-800">
             <div className="text-2xl font-bold text-blue-700 dark:text-blue-400">{activeDays}</div>
@@ -195,7 +195,7 @@ export const ActivityHeatmap: React.FC = () => {
         </div>
       </div>
 
-      {/* Enhanced Workout Details Modal */}
+ 
       {selectedDate && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-4xl w-full max-h-[80vh] overflow-hidden">
@@ -239,7 +239,7 @@ export const ActivityHeatmap: React.FC = () => {
                           </span>
                         </div>
                         
-                        {/* Enhanced Sets Display with Chart */}
+                     
                         <div className="space-y-3">
                           <div className="grid grid-cols-3 gap-2 text-xs font-medium text-gray-600 dark:text-gray-400">
                             <div>Set</div>
@@ -255,7 +255,7 @@ export const ActivityHeatmap: React.FC = () => {
                           ))}
                         </div>
                         
-                        {/* Visual Progress Chart */}
+               
                         <div className="mt-4">
                           <h6 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Weight Distribution</h6>
                           <div className="flex items-end space-x-1 h-16 bg-gray-100 dark:bg-gray-600 rounded p-2">
@@ -279,7 +279,7 @@ export const ActivityHeatmap: React.FC = () => {
                             })}
                           </div>
                           
-                          {/* Reps Chart */}
+                       
                           <h6 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 mt-4">Reps Distribution</h6>
                           <div className="flex items-end space-x-1 h-12 bg-gray-100 dark:bg-gray-600 rounded p-2">
                             {exercise.sets.map((set, setIndex) => {

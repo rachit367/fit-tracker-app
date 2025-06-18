@@ -2,13 +2,18 @@ const express=require('express');
 const router=express.Router();
 const isLoggedIn=require('../middlewares/isLoggedIn');
 const {loginUser,registerUser,logoutUser,editUser}=require('../controllers/authController');
+const jwt=require('jsonwebtoken');
+const userModel=require('../models/User');
 
-router.get('/',isLoggedIn,function(req,res){
-    if (req.user) {
-        return res.json(req.user);
+router.get('/',async function(req,res){
+    let token=req.cookies.token;
+    if (token) {
+        let decoded=jwt.verify(token,process.env.SECRET_KEY);
+        let user=await userModel.findById(decoded._id);
+        return res.json(user);
     } 
     else {
-    return res.status(401).json({ message: 'Not logged in' });
+    return res.json(null);
   }
 })
 

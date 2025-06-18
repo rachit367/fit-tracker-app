@@ -1,14 +1,15 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Workout, PerformanceData } from '../types/fitness';
 import { useAuth } from './AuthContext';
+import { ApiResponse, WorkoutResponse } from '../types/api';
 const URL=import.meta.env.VITE_BACKEND_URL;
 import axios from 'axios'
 
 interface WorkoutContextType {
   workouts: Workout[];
-  addWorkout: (workout: Omit<Workout, 'id' | 'userId'>) => void;
-  updateWorkout: (workoutId: string, updates: Partial<Workout>) => void;
-  deleteWorkout: (workoutId: string) => void;
+  addWorkout: (workout: Omit<Workout, '_id' | 'userId'>) => Promise<Workout>;
+  updateWorkout: (workoutId: string, workoutData: Workout) => Promise<Workout>;
+  deleteWorkout: (workoutId: string) => Promise<void>;
   getWorkoutByDate: (date: string) => Workout | undefined;
   getPerformanceData: (exerciseId: string, days?: number) => PerformanceData[];
   getTodaysWorkout: () => Workout | undefined;
@@ -22,12 +23,15 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const { user } = useAuth();
 
   useEffect(() => {
-    const fetchSavedWorkout=async()=>{
+    const fetchSavedWorkout = async () => {
       if(user){
-        const savedWorkouts=await axios.get(`${URL}/workout/savedworkouts`);
-        if(savedWorkouts.data.length!=0){
-          setWorkouts(savedWorkouts.data);
-          
+        try {
+          const response = await axios.get<ApiResponse<WorkoutResponse[]>>(`${URL}/workout/savedworkouts`, { withCredentials: true });
+          if(response.data.success && response.data.data) {
+            setWorkouts(response.data.data);
+          }
+        } catch (error) {
+          console.error('Failed to fetch workouts:', error);
         }
       }
     }
@@ -36,41 +40,90 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const saveWorkouts = async (updatedWorkouts: Workout[]) => {
     if (user) {
-      setWorkouts(updatedWorkouts);
-      await axios.post(`${URL}/workout/updateworkout`,{updatedWorkouts});
+      try {
+        const response = await axios.put<ApiResponse<WorkoutResponse[]>>(
+          `${URL}/workout/updateworkout`,
+          { updatedWorkouts },
+          { withCredentials: true }
+        );
+        if(response.data.success && response.data.data) {
+          setWorkouts(response.data.data);
+        }
+      } catch (error) {
+        console.error('Failed to save workouts:', error);
+        throw error;
+      }
     }
   };
 
   const addWorkout = async (workoutData: Omit<Workout, '_id' | 'userId'>) => {
-    if (!user) return;
+    if (!user) throw new Error('User not authenticated');
     
-    const newWorkout=await axios.post(`${URL}/workout/addworkout`,{workoutData}); 
-    
-    setWorkouts([...workouts, newWorkout.data])
+    try {
+      const response = await axios.post<ApiResponse<WorkoutResponse>>(
+        `${URL}/workout/addworkout`,
+        { workoutData },
+        { withCredentials: true }
+      );
+      
+      if(response.data.success && response.data.data) {
+        setWorkouts(prev => [...prev, response.data.data]);
+        return response.data.data;
+      }
+      throw new Error('Failed to add workout');
+    } catch (error) {
+      console.error('Failed to add workout:', error);
+      throw error;
+    }
   };
 
-  const updateWorkout = async (workoutId: string, updates: Partial<Workout>) => {
-    const updatedWorkout = workouts.find(workout => workout._id === workoutId);
-  if (!updatedWorkout) return;
+  const updateWorkout = async (workoutId: string, workoutData: Workout) => {
+    try {
+      // Preserve the original workout's date
+      const originalWorkout = workouts.find(w => w._id === workoutId);
+      if (originalWorkout) {
+        workoutData.date = originalWorkout.date;
+      }
 
-  const newWorkout = { ...updatedWorkout, ...updates };
-  const updatedWorkouts = workouts.map(workout =>
-    workout._id === workoutId ? newWorkout : workout
-  );
-  setWorkouts(updatedWorkouts);
-  await axios.post(`${URL}/workout/updateworkout`,{ updatedWorkout: newWorkout });
+      const response = await axios.put<ApiResponse<WorkoutResponse>>(
+        `${URL}/workout/updateworkout`,
+        { workoutId, workoutData },
+        { withCredentials: true }
+      );
+      
+      if (response.data.success && response.data.data) {
+        setWorkouts(prevWorkouts => {
+          const workoutIndex = prevWorkouts.findIndex(w => w._id === workoutId);
+          if (workoutIndex === -1) return prevWorkouts;
+          
+          const newWorkouts = [...prevWorkouts];
+          newWorkouts[workoutIndex] = response.data.data;
+          return newWorkouts;
+        });
+        return response.data.data;
+      }
+      throw new Error('Failed to update workout');
+    } catch (error) {
+      console.error('Failed to update workout:', error);
+      throw error;
+    }
   };
 
-  const deleteWorkout = (workoutId: string) => {
-    const updatedWorkouts = workouts.filter(workout => workout._id !== workoutId);
-    saveWorkouts(updatedWorkouts);
+  const deleteWorkout = async (workoutId: string) => {
+    try {
+      const updatedWorkouts = workouts.filter(workout => workout._id !== workoutId);
+      await saveWorkouts(updatedWorkouts);
+    } catch (error) {
+      console.error('Failed to delete workout:', error);
+      throw error;
+    }
   };
 
   const getWorkoutByDate = (date: string) => {
     return workouts.find(workout => {
-    const workoutDate = new Date(workout.date).toISOString().split('T')[0];
-    return workoutDate === date;
-  });
+      const workoutDate = new Date(workout.date).toISOString().split('T')[0];
+      return workoutDate === date;
+    });
   };
 
   const getPerformanceData = (exercisename: string, days = 30): PerformanceData[] => {

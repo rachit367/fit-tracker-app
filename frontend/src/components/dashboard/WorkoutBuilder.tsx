@@ -32,11 +32,11 @@ export const WorkoutBuilder: React.FC<WorkoutBuilderProps> = ({
   const [customExerciseName, setCustomExerciseName] = useState('');
   const [customMuscleGroup, setCustomMuscleGroup] = useState<string>('Chest');
 
-  // 🟢 Load exercises from backend
+
   useEffect(() => {
     const fetchExercises = async () => {
       try {
-        const response = await axios.get(`${URL}/exercise/defaultexercises`);
+        const response = await axios.get(`${URL}/exercise/defaultexercises`,{ withCredentials: true });
         setAvailableExercises(response.data);
       } catch (error) {
         console.error('Failed to fetch exercises:', error);
@@ -61,19 +61,17 @@ export const WorkoutBuilder: React.FC<WorkoutBuilderProps> = ({
   };
 
   const handleAddExercise = async (exercise: Exercise) => {
-    if (!selectedExercises.find(e => e._id === exercise._id)) {
-      try {
-        const response = await axios.post(`${URL}/exercise/add`, { exercise });
-        setSelectedExercises([...selectedExercises, response.data]);
-      } catch (error) {
-        console.error('Failed to add exercise:', error);
-      }
+  if (!selectedExercises.find(e => e._id === exercise._id)) {
+    try {
+      setSelectedExercises([...selectedExercises, exercise]);
+    } catch (error) {
+      console.error('Failed to add exercise:', error);
     }
-  };
+  }
+};
 
   const handleRemoveExercise = async (exerciseId: string) => {
     try {
-      await axios.put(`${URL}/exercise/remove`, { exerciseId });
       setSelectedExercises(selectedExercises.filter(e => e._id !== exerciseId));
     } catch (error) {
       console.error('Failed to remove exercise:', error);
@@ -89,8 +87,9 @@ export const WorkoutBuilder: React.FC<WorkoutBuilderProps> = ({
       };
 
       try {
-        const response = await axios.post(`${URL}/exercise/add`, { exercise: newExercise });
-        setSelectedExercises([...selectedExercises, response.data]);
+        const response = await axios.post(`${URL}/exercise/add`, { exercise: newExercise },{ withCredentials: true });
+      setSelectedExercises(prev => [...prev, response.data]);
+      setAvailableExercises(prev => [...prev, response.data]);
         setCustomExerciseName('');
       } catch (error) {
         console.error('Failed to add custom exercise:', error);
@@ -111,7 +110,7 @@ export const WorkoutBuilder: React.FC<WorkoutBuilderProps> = ({
     return {
       _id: exercise._id,
       exercisename: exercise.name,
-      exercise,
+      exercise: exercise,
       sets: [
         { id: `set-1`, reps: 8, weight: lastWeight, completed: false },
         { id: `set-2`, reps: 8, weight: lastWeight, completed: false },

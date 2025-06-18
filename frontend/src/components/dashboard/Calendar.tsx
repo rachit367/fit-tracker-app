@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { useWorkouts } from '../../context/WorkoutContext';
 import { WorkoutBuilder } from './WorkoutBuilder';
-import { ChevronLeft, ChevronRight, Plus, Flame, Trophy, Target } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Flame, Trophy, Target, Trash2 } from 'lucide-react';
 
 export const Calendar: React.FC = () => {
-  const { workouts, getWorkoutByDate } = useWorkouts();
+  const { workouts, getWorkoutByDate, deleteWorkout } = useWorkouts();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [showBuilder, setShowBuilder] = useState(false);
+  const [hoveredDate, setHoveredDate] = useState<string | null>(null);
 
   const today = new Date();
   const year = currentDate.getFullYear();
@@ -59,7 +60,18 @@ export const Calendar: React.FC = () => {
 
   const completedWorkouts = monthlyStats.filter(w => w.completed).length;
   const totalWorkouts = monthlyStats.length;
-  const streak = 5; // This would be calculated based on consecutive days
+  const streak = 5; 
+
+  const handleDeleteWorkout = async (date: Date, e: React.MouseEvent) => {
+    e.stopPropagation(); 
+    const dateString = date.toISOString().split('T')[0];
+    const workout = getWorkoutByDate(dateString);
+    if (workout) {
+      if (window.confirm('Are you sure you want to delete this workout?')) {
+        await deleteWorkout(workout._id);
+      }
+    }
+  };
 
   if (showBuilder) {
     const selectedWorkout = selectedDate ? getWorkoutByDate(selectedDate) : undefined;
@@ -81,7 +93,7 @@ export const Calendar: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Monthly Stats */}
+      
       <div className="grid grid-cols-3 gap-4">
         <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 p-4 rounded-xl border border-blue-200 dark:border-blue-800">
           <div className="flex items-center justify-between">
@@ -114,9 +126,9 @@ export const Calendar: React.FC = () => {
         </div>
       </div>
 
-      {/* Calendar */}
+   
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700">
-        {/* Calendar Header */}
+       
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -145,9 +157,9 @@ export const Calendar: React.FC = () => {
           </div>
         </div>
 
-        {/* Calendar Grid */}
+      
         <div className="p-6">
-          {/* Day Headers */}
+     
           <div className="grid grid-cols-7 gap-1 mb-4">
             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
               <div key={day} className="text-center text-sm font-bold text-gray-600 dark:text-gray-400 py-3">
@@ -156,20 +168,24 @@ export const Calendar: React.FC = () => {
             ))}
           </div>
 
-          {/* Calendar Days */}
+          
           <div className="grid grid-cols-7 gap-1">
             {days.map((date, index) => {
               const isCurrentMonth = date.getMonth() === month;
               const isToday = date.toDateString() === today.toDateString();
               const workout = getWorkoutByDate(date.toISOString().split('T')[0]);
               const intensity = getWorkoutIntensity(date);
+              const dateString = date.toISOString().split('T')[0];
+              const isHovered = hoveredDate === dateString;
               
               return (
-                <button
+                <div
                   key={index}
                   onClick={() => handleDateClick(date)}
+                  onMouseEnter={() => setHoveredDate(dateString)}
+                  onMouseLeave={() => setHoveredDate(null)}
                   className={`
-                    relative aspect-square p-2 text-sm rounded-xl transition-all duration-300 hover:scale-105
+                    relative aspect-square p-2 text-sm rounded-xl transition-all duration-300 hover:scale-105 cursor-pointer
                     ${!isCurrentMonth ? 'text-gray-400 dark:text-gray-600' : 'text-gray-900 dark:text-white'}
                     ${isToday ? 'bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}
                   `}
@@ -179,7 +195,7 @@ export const Calendar: React.FC = () => {
                       {date.getDate()}
                     </span>
                     
-                    {/* Workout Intensity Indicator */}
+               
                     {intensity !== 'none' && !isToday && (
                       <div className={`
                         w-2 h-2 rounded-full mt-1 shadow-sm
@@ -189,12 +205,12 @@ export const Calendar: React.FC = () => {
                       `} />
                     )}
                     
-                    {/* Today indicator with workout */}
+                  
                     {isToday && intensity !== 'none' && (
                       <div className="w-2 h-2 rounded-full mt-1 bg-white shadow-sm" />
                     )}
                     
-                    {/* Completed workout indicator */}
+               
                     {workout?.completed && (
                       <div className="absolute top-1 right-1">
                         <div className="w-3 h-3 bg-green-500 rounded-full flex items-center justify-center">
@@ -202,13 +218,23 @@ export const Calendar: React.FC = () => {
                         </div>
                       </div>
                     )}
+
+                    
+                    {isHovered && workout && (
+                      <button
+                        onClick={(e) => handleDeleteWorkout(date, e)}
+                        className="absolute top-1 left-1 p-1 rounded-full bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/40 transition-colors"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    )}
                   </div>
-                </button>
+                </div>
               );
             })}
           </div>
 
-          {/* Legend */}
+          
           <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-6 text-sm">

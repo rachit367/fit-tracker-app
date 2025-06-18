@@ -11,4 +11,5 @@ router.post('/add',addExercise);
 router.put('/remove',removeExercise);
 
 router.post('/exerciseinfo',exerciseInfo)
+
 module.exports = router;

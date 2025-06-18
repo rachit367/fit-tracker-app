@@ -1,14 +1,12 @@
-const express=require('express');
-const router=express.Router();
-const isLoggedIn=require('../middlewares/isLoggedIn');
-const {savedWorkout, updateWorkout, addWorkout, todaysWorkout}=require('../controllers/workoutController');
+const express = require('express');
+const router = express.Router();
+const isLoggedIn = require('../middlewares/isLoggedIn');
+const { validateWorkoutUpdate, validateWorkoutCreate } = require('../middlewares/validateRequest');
+const { savedWorkout, updateWorkout, addWorkout, todaysWorkout } = require('../controllers/workoutController');
 
-router.get('/savedworkouts',savedWorkout);
-
-router.post('/updateworkout',updateWorkout);
-
-router.post('/addworkout',addWorkout);
-
-router.get('/todaysworkout',todaysWorkout)
+router.get('/savedworkouts', isLoggedIn, savedWorkout);
+router.put('/updateworkout', isLoggedIn, validateWorkoutUpdate, updateWorkout);
+router.post('/addworkout', isLoggedIn, validateWorkoutCreate, addWorkout);
+router.get('/todaysworkout', isLoggedIn, todaysWorkout);
 
 module.exports = router;

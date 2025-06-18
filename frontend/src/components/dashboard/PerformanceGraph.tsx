@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useWorkouts } from '../../context/WorkoutContext';
 import axios from 'axios';
 const URL=import.meta.env.VITE_BACKEND_URL;
@@ -9,15 +9,37 @@ export const PerformanceGraph: React.FC = () => {
   const { workouts, getPerformanceData } = useWorkouts();
   const [selectedExercise, setSelectedExercise] = useState('');
   const [timeRange, setTimeRange] = useState<'week' | 'month' | 'quarter'>('month');
+  const [DEFAULT_EXERCISES, setD_E] = useState<Exercise[]>([]);
+  const [selectedExerciseInfo, setSEI] = useState<Exercise>();
   
-  const days = timeRange === 'week' ? 7 : timeRange === 'month' ? 30 : 90;
-  const performanceData = getPerformanceData(selectedExercise, days);
-  const[DEFAULT_EXERCISES,setD_E]=useState<Exercise[]>([]);
+  const days = useMemo(() => 
+    timeRange === 'week' ? 7 : timeRange === 'month' ? 30 : 90,
+    [timeRange]
+  );
 
-useEffect(() => {
+  const performanceData = useMemo(() => 
+    getPerformanceData(selectedExercise, days),
+    [selectedExercise, days, getPerformanceData]
+  );
+
+  const stats = useMemo(() => {
+    const totalSessions = performanceData.length;
+    const avgWeight = totalSessions > 0 
+      ? Math.round(performanceData.reduce((sum, data) => sum + data.maxWeight, 0) / totalSessions)
+      : 0;
+    const totalVolume = Math.round(performanceData.reduce((sum, data) => sum + data.totalVolume, 0));
+    const progressPercentage = totalSessions > 1
+      ? Math.round(((performanceData[performanceData.length - 1]?.maxWeight || 0) - 
+                    (performanceData[0]?.maxWeight || 0)) / (performanceData[0]?.maxWeight || 1) * 100)
+      : 0;
+
+    return { totalSessions, avgWeight, totalVolume, progressPercentage };
+  }, [performanceData]);
+
+  useEffect(() => {
     const fetchExercises = async () => {
       try {
-        const response = await axios.get(`${URL}/exercise/defaultexercises`);
+        const response = await axios.get(`${URL}/exercise/defaultexercises`, { withCredentials: true });
         setD_E(response.data);
       } catch (error) {
         console.error('Failed to fetch exercises:', error);
@@ -26,32 +48,40 @@ useEffect(() => {
 
     fetchExercises();
   }, []);
-  
-  
-  const [selectedExerciseInfo,setSEI]=useState<Exercise>();
-  useEffect(() => {
-    const exerciseInfo = async()=>{
-    const response=await axios.post(`${URL}/exercise/exerciseinfo`,{selectedExercise});
-    setSEI(response.data);
-  }
-  if(selectedExercise){
-    exerciseInfo();
-  }
-}, [selectedExercise]);
 
-  const totalSessions = performanceData.length;
-  const avgWeight = totalSessions > 0 
-    ? Math.round(performanceData.reduce((sum, data) => sum + data.maxWeight, 0) / totalSessions)
-    : 0;
-  const totalVolume = Math.round(performanceData.reduce((sum, data) => sum + data.totalVolume, 0));
-  const progressPercentage = totalSessions > 1
-    ? Math.round(((performanceData[performanceData.length - 1]?.maxWeight || 0) - 
-                  (performanceData[0]?.maxWeight || 0)) / (performanceData[0]?.maxWeight || 1) * 100)
-    : 0;
+  useEffect(() => {
+    let isMounted = true;
+    
+    const exerciseInfo = async () => {
+      if (!selectedExercise) return;
+      
+      try {
+        const response = await axios.post(
+          `${URL}/exercise/exerciseinfo`,
+          { selectedExercise },
+          { withCredentials: true }
+        );
+        if (isMounted && response.data) {
+          setSEI(response.data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch exercise info:', error);
+        if (isMounted) {
+          setSEI(undefined);
+        }
+      }
+    };
+
+    exerciseInfo();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedExercise]);
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+    
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Performance Analytics</h2>
@@ -79,13 +109,13 @@ useEffect(() => {
           </div>
         </div>
 
-        {/* Stats Grid */}
+      
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
             <div className="flex items-center justify-center w-12 h-12 bg-blue-100 dark:bg-blue-800 rounded-full mb-2 mx-auto">
               <BarChart3 className="w-6 h-6 text-blue-600 dark:text-blue-400" />
             </div>
-            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{totalSessions}</div>
+            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.totalSessions}</div>
             <div className="text-sm text-gray-600 dark:text-gray-400">Sessions</div>
           </div>
           
@@ -93,7 +123,7 @@ useEffect(() => {
             <div className="flex items-center justify-center w-12 h-12 bg-green-100 dark:bg-green-800 rounded-full mb-2 mx-auto">
               <TrendingUp className="w-6 h-6 text-green-600 dark:text-green-400" />
             </div>
-            <div className="text-2xl font-bold text-green-600 dark:text-green-400">{avgWeight}Kg</div>
+            <div className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.avgWeight}Kg</div>
             <div className="text-sm text-gray-600 dark:text-gray-400">Avg Weight</div>
           </div>
           
@@ -101,7 +131,7 @@ useEffect(() => {
             <div className="flex items-center justify-center w-12 h-12 bg-purple-100 dark:bg-purple-800 rounded-full mb-2 mx-auto">
               <BarChart3 className="w-6 h-6 text-purple-600 dark:text-purple-400" />
             </div>
-            <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">{totalVolume}</div>
+            <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">{stats.totalVolume}</div>
             <div className="text-sm text-gray-600 dark:text-gray-400">Total Volume</div>
           </div>
           
@@ -109,15 +139,15 @@ useEffect(() => {
             <div className="flex items-center justify-center w-12 h-12 bg-orange-100 dark:bg-orange-800 rounded-full mb-2 mx-auto">
               <TrendingUp className="w-6 h-6 text-orange-600 dark:text-orange-400" />
             </div>
-            <div className={`text-2xl font-bold ${progressPercentage >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-              {progressPercentage > 0 ? '+' : ''}{progressPercentage}%
+            <div className={`text-2xl font-bold ${stats.progressPercentage >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+              {stats.progressPercentage > 0 ? '+' : ''}{stats.progressPercentage}%
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400">Progress</div>
           </div>
         </div>
       </div>
 
-      {/* Enhanced Performance Chart */}
+    
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
           {selectedExerciseInfo?.name} Progress Chart
@@ -125,7 +155,7 @@ useEffect(() => {
         
         {performanceData.length > 0 ? (
           <div className="space-y-6">
-            {/* Interactive Chart */}
+
             <div className="bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-700 dark:to-blue-900/20 p-6 rounded-xl">
               <div className="h-80 flex items-end space-x-2 overflow-x-auto">
                 {performanceData.map((data, index) => {
@@ -135,7 +165,7 @@ useEffect(() => {
                   return (
                     <div key={index} className="flex flex-col items-center min-w-[50px] group">
                       <div className="relative">
-                        {/* Tooltip */}
+                       
                         <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-900 dark:bg-gray-700 text-white text-xs rounded px-2 py-1 whitespace-nowrap z-10">
                           {data.maxWeight}Kg<br/>
                           Vol: {data.totalVolume}<br/>
@@ -146,7 +176,7 @@ useEffect(() => {
                           className="bg-gradient-to-t from-blue-500 to-blue-600 dark:from-blue-400 dark:to-blue-500 rounded-t transition-all duration-300 hover:from-blue-600 hover:to-blue-700 dark:hover:from-blue-300 dark:hover:to-blue-400 min-w-[40px] cursor-pointer shadow-lg hover:shadow-xl"
                           style={{ height: `${height}%`, minHeight: '20px' }}
                         >
-                          {/* Progress line */}
+                          
                           {index > 0 && (
                             <div className="absolute top-0 left-full w-2 h-0.5 bg-blue-400 dark:bg-blue-300 transform -translate-y-1/2"></div>
                           )}
@@ -161,7 +191,7 @@ useEffect(() => {
                 })}
               </div>
               
-              {/* Chart Legend */}
+              
               <div className="mt-4 flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
                 <span>Weight Progress Over Time</span>
                 <div className="flex items-center space-x-4">
@@ -173,7 +203,7 @@ useEffect(() => {
               </div>
             </div>
             
-            {/* Enhanced Data Table */}
+            
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>

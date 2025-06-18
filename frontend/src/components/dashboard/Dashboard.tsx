@@ -56,7 +56,7 @@ export const Dashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-300">
-      {/* Animated Header */}
+  
       <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 dark:from-gray-800 dark:via-gray-700 dark:to-gray-800 shadow-xl">
         <div className="max-w-6xl mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
@@ -73,7 +73,7 @@ export const Dashboard: React.FC = () => {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              {/* Theme Toggle */}
+             
               <button
                 onClick={toggleDarkMode}
                 className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors duration-300"
@@ -101,12 +101,12 @@ export const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Content */}
+   
       <div className="max-w-6xl mx-auto px-4 py-6">
         {renderContent()}
       </div>
 
-      {/* Enhanced Bottom Navigation */}
+      
       <div className="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-gray-800/95 backdrop-blur-lg border-t border-gray-200 dark:border-gray-700 shadow-2xl transition-colors duration-300">
         <div className="flex items-center justify-around max-w-md mx-auto relative">
           {tabs.map((tab, index) => {
@@ -140,7 +140,7 @@ export const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Add padding to prevent content from being hidden behind bottom nav */}
+      
       <div className="h-24"></div>
     </div>
   );

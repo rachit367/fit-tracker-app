@@ -47,7 +47,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    const foundUser=await axios.post(`${URL}/login`,{email,password}, { withCredentials: true });
+    const foundUser=await axios.post(`${URL}/user/login`,{email,password}, { withCredentials: true });
     
     if (foundUser) {
       setIsLoading(false);

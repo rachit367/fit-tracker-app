@@ -9,7 +9,7 @@ export const DailyChallenges: React.FC = () => {
   const [challenge, setChallenge] = useState<DailyChallenge | null>(null);
 
   useEffect(() => {
-    // Load or generate today's challenge
+    
     const today = new Date().toDateString();
     const savedChallenge = localStorage.getItem(`challenge_${today}`);
     
@@ -27,11 +27,11 @@ export const DailyChallenges: React.FC = () => {
       const completedChallenge = { ...challenge, completed: true, progress: challenge.target };
       setChallenge(completedChallenge);
       
-      // Save completed challenge
+      
       const today = new Date().toDateString();
       localStorage.setItem(`challenge_${today}`, JSON.stringify(completedChallenge));
       
-      // Award XP
+     
       addXp(challenge.xpReward);
     }
   };
@@ -74,7 +74,7 @@ export const DailyChallenges: React.FC = () => {
         <p className="text-gray-600 text-sm">{challenge.description}</p>
       </div>
 
-      {/* Progress Bar */}
+ 
       <div className="mb-4">
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm font-medium text-gray-700">Progress</span>
@@ -105,7 +105,7 @@ export const DailyChallenges: React.FC = () => {
         </div>
       </div>
 
-      {/* Action Button */}
+   
       {!challenge.completed && (
         <button
           onClick={completeChallenge}

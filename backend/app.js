@@ -11,7 +11,7 @@ const dashboardRouter=require('./routes/dashboardRouter');
 const workoutRouter=require('./routes/workoutRouter');
 const isLoggedIn = require('./middlewares/isLoggedIn');
 const exerciseRouter=require('./routes/exerciseRouter');
-
+const setRouter=require('./routes/setRouter');
 
 require('dotenv').config();
 DB().then(async()=>{
@@ -19,10 +19,12 @@ DB().then(async()=>{
 });
 
 
-app.use(cors({
-  origin: process.env.FRONTEND_URL ,
-  credentials: true 
-}));
+const corsOptions = {
+    origin: 'http://localhost:5173',
+    credentials: true,
+};
+
+app.use(cors(corsOptions));
 
 
 app.use(express.json());
@@ -32,9 +34,11 @@ app.use(express.static(path.join(__dirname,'public')));
 
 
 app.use('/user',userRouter);
-app.use('/dashboard',dashboardRouter);
+app.use('/dashboard',isLoggedIn,dashboardRouter);
 app.use('/workout',isLoggedIn,workoutRouter);
 app.use('/exercise',isLoggedIn,exerciseRouter);
+app.use('/set',isLoggedIn,setRouter);
 
 
-app.listen(3000);
+
+app.listen(4000);

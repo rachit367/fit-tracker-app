@@ -1,22 +1,67 @@
-import React from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useWorkouts } from '../../context/WorkoutContext';
 import { calculateLevel, getXpForNextLevel } from '../../data/achievements';
-import { Trophy, Flame, Target, TrendingUp, Star, Zap } from 'lucide-react';
+import { Trophy, Flame, Target, TrendingUp, Star, Zap, AlertCircle } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
 export const UserStats: React.FC = () => {
   const { user } = useAuth();
   const { getThisWeeksWorkouts } = useWorkouts();
+  const [showStreakReset, setShowStreakReset] = useState(false);
   
   if (!user) return null;
 
-  const thisWeeksWorkouts = getThisWeeksWorkouts();
-  const completedThisWeek = thisWeeksWorkouts.filter(w => w.completed).length;
-  const xpForNextLevel = getXpForNextLevel(user.xp);
-  const xpProgress = (((user.xp ?? 0) % 1000) / 1000) * 100;
+  const thisWeeksWorkouts = useMemo(() => getThisWeeksWorkouts(), [getThisWeeksWorkouts]);
+  const completedThisWeek = useMemo(() => 
+    thisWeeksWorkouts.filter(w => w.completed).length,
+    [thisWeeksWorkouts]
+  );
+
+  const { xpForNextLevel, xpProgress } = useMemo(() => {
+    const xpForNext = getXpForNextLevel(user.xp);
+    const progress = (((user.xp ?? 0) % 1000) / 1000) * 100;
+    return { xpForNextLevel: xpForNext, xpProgress: progress };
+  }, [user.xp]);
+
+  const latestAchievement = useMemo(() => 
+    user.achievements?.[user.achievements.length - 1],
+    [user.achievements]
+  );
+
+  // Check for streak reset
+  useEffect(() => {
+    const lastWorkout = thisWeeksWorkouts[0];
+    if (lastWorkout) {
+      const lastWorkoutDate = new Date(lastWorkout.date);
+      const today = new Date();
+      const hoursSinceLastWorkout = (today - lastWorkoutDate) / (1000 * 60 * 60);
+      
+      if (hoursSinceLastWorkout > 24 && user.streak > 0) {
+        setShowStreakReset(true);
+        toast.error('Your streak has been reset! Complete a workout today to start a new streak.', {
+          duration: 5000,
+          icon: '🔥',
+        });
+      }
+    }
+  }, [thisWeeksWorkouts, user.streak]);
 
   return (
     <div className="bg-gradient-to-br from-white to-blue-50 dark:from-gray-800 dark:to-blue-900/20 rounded-2xl shadow-xl p-6 border border-blue-100 dark:border-blue-800">
+      {/* Streak Reset Alert */}
+      {showStreakReset && (
+        <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800">
+          <div className="flex items-center space-x-3">
+            <AlertCircle className="w-6 h-6 text-red-600 dark:text-red-400" />
+            <div>
+              <p className="font-medium text-red-800 dark:text-red-300">Streak Reset</p>
+              <p className="text-sm text-red-600 dark:text-red-400">Complete a workout today to start a new streak!</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* XP Progress Bar */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
@@ -86,17 +131,17 @@ export const UserStats: React.FC = () => {
       </div>
 
       {/* Recent Achievements */}
-      {user.achievements.length > 0 && (
+      {user.achievements?.length > 0 && latestAchievement && (
         <div className="mt-6 p-4 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-xl border border-yellow-200 dark:border-yellow-800">
           <h3 className="font-semibold text-gray-900 dark:text-white mb-2 flex items-center">
             <Trophy className="w-5 h-5 mr-2 text-yellow-600 dark:text-yellow-400" />
             Latest Achievement
           </h3>
           <div className="flex items-center space-x-3">
-            <span className="text-2xl">{user.achievements[user.achievements.length - 1].icon}</span>
+            <span className="text-2xl">{latestAchievement.icon}</span>
             <div>
-              <p className="font-medium text-gray-900 dark:text-white">{user.achievements[user.achievements.length - 1].name}</p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">{user.achievements[user.achievements.length - 1].description}</p>
+              <p className="font-medium text-gray-900 dark:text-white">{latestAchievement.name}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{latestAchievement.description}</p>
             </div>
           </div>
         </div>

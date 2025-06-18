@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { WorkoutExercise } from '../../types/fitness';
 import { useWorkouts } from '../../context/WorkoutContext';
 import { CheckCircle, Circle, TrendingUp, Edit3, Zap, Target, Plus, Minus } from 'lucide-react';
+import axios from 'axios';
+const URL=import.meta.env.VITE_BACKEND_URL;
 
 interface ExerciseCardProps {
   exercise: WorkoutExercise;
@@ -22,7 +24,6 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
   const lastWeekMax = performanceData.length > 1 ? 
     performanceData[performanceData.length - 2]?.maxWeight : null;
 
-  // Get last workout weight for this exercise
   const getLastWorkoutWeight = () => {
     if (performanceData.length > 0) {
       return performanceData[performanceData.length - 1]?.maxWeight || 0;
@@ -44,15 +45,29 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
     onUpdate({ sets: updatedSets });
   };
 
-  const handleAddSet = () => {
-    const lastWeight = getLastWorkoutWeight();
-    const newSet = {
-      id: `set-${Date.now()}`,
-      reps: 8,
-      weight: lastWeight,
-      completed: false
-    };
-    onUpdate({ sets: [...exercise.sets, newSet] });
+  const handleAddSet = async () => {
+    try {
+      const lastWeight = getLastWorkoutWeight();
+      const newSet = {
+        reps: 8,
+        weight: lastWeight,
+        completed: false
+      };
+      
+      const response = await axios.post(
+        `${URL}/set/add`,
+        { newSet, exercise },
+        { withCredentials: true }
+      );
+      
+      if (response.data) {
+        const updatedSets = [...exercise.sets, response.data];
+        onUpdate({ sets: updatedSets });
+      }
+    } catch (error) {
+      console.error('Failed to add set:', error);
+    
+    }
   };
 
   const handleRemoveSet = () => {
@@ -71,7 +86,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
         : 'border-gray-200 dark:border-gray-700 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-700 hover:shadow-xl'
     }`}>
       <div className="p-6">
-        {/* Exercise Header */}
+      
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-3">
             <div className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg ${
@@ -112,7 +127,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
           </div>
         </div>
 
-        {/* Sets Controls */}
+   
         <div className="flex items-center justify-between mb-4">
           <h4 className="font-medium text-gray-900 dark:text-white">Sets</h4>
           <div className="flex items-center space-x-2">
@@ -135,7 +150,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
           </div>
         </div>
 
-        {/* Sets */}
+  
         <div className="space-y-3">
           <div className="grid grid-cols-4 gap-2 text-sm font-medium text-gray-600 dark:text-gray-400 px-2">
             <div>Set</div>
@@ -146,7 +161,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
           
           {exercise.sets.map((set, index) => (
             <div
-              key={set.id}
+              key={`${exercise._id}-set-${index}`}
               className={`grid grid-cols-4 gap-2 items-center p-3 rounded-xl transition-all duration-300 ${
                 set.completed 
                   ? 'bg-gradient-to-r from-green-100 to-green-200 dark:from-green-900/20 dark:to-green-800/20 border border-green-300 dark:border-green-600' 
@@ -193,7 +208,10 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
               
               <div className="flex items-center justify-end">
                 <button
-                  onClick={() => handleSetToggle(index)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleSetToggle(index);
+                  }}
                   className={`transition-all duration-300 transform hover:scale-110 ${
                     set.completed
                       ? 'text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300'
@@ -211,7 +229,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
           ))}
         </div>
 
-        {/* Edit Toggle */}
+        
         <div className="mt-4 flex justify-end">
           <button
             onClick={() => setIsEditing(!isEditing)}
@@ -222,7 +240,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
           </button>
         </div>
 
-        {/* Performance Indicator */}
+      
         {showPerformance && performanceData.length > 0 && (
           <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
             <div className="flex items-center justify-between text-sm mb-3">

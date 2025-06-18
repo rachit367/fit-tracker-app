@@ -1,29 +1,39 @@
 const userModel=require('../models/User');
 const bcrypt=require('bcrypt');
 const cookieParser=require('cookie-parser');
-const generateToken=require('../utils/generateToken');
+const {generateToken}=require('../utils/generateToken');
 
-module.exports.loginUser=async function(req,res){
-    try{
-        let user=await userModel.findOne({email:req.body.email});
-        let encrypted=user.password;
-        let result=await bcrypt.compare(req.body.password,encrypted);
-        if(result==true){
-            let token=generateToken(user);
-            res.cookie('token',token,{
-    httpOnly: true,
-    sameSite: 'Lax',
-    secure: false,
-    maxAge: 7 * 24 * 60 * 60 * 1000 
-});
+module.exports.loginUser = async function (req, res) {
+    try {
+        let user = await userModel.findOne({ email: req.body.email });
+
+
+        if (!user) {
+            return res.status(404).send("User not found");
+        }
+
+        let encrypted = user.password;
+        let result = await bcrypt.compare(req.body.password, encrypted);
+
+        if (result == true) {
+            let token = generateToken(user);
+
+            res.cookie('token', token, {
+                httpOnly: true,
+                sameSite: 'Lax',
+                secure: false,  
+                maxAge: 7 * 24 * 60 * 60 * 1000  
+            });
+
             return res.json(user);
+        } else {
+            res.status(401).send("Invalid password");
         }
-        res.status(401).send("Invalid password");
-        return null;
-        }catch(err){
-            res.status(500).send(err.message);
-        }
+    } catch (err) {
+        res.status(500).send(err.message);
     }
+};
+
 
 module.exports.registerUser=async function(req,res){
     try{
@@ -49,7 +59,8 @@ module.exports.registerUser=async function(req,res){
 });
         return res.json(user);
         }catch(err){
-             res.status(500).send(err.message);
+            console.error(err);
+            res.status(500).send(err.message);
         }
     }
 

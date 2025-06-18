@@ -15,7 +15,7 @@ export const MuscleTargets: React.FC = () => {
   
   const thisWeeksWorkouts = getThisWeeksWorkouts();
   
-  // Calculate muscle group targeting for this week based on selected groups only
+  
   const muscleGroupStats = selectedMuscleGroups.map(group => {
     const exercisesThisWeek = thisWeeksWorkouts.flatMap(workout =>
       workout.exercises.filter(exercise => exercise.exercise.muscleGroup === group)
@@ -41,13 +41,13 @@ export const MuscleTargets: React.FC = () => {
     };
   }).sort((a, b) => b.exerciseCount - a.exerciseCount);
 
-  // Calculate weekly stats
+
   const totalWorkouts = thisWeeksWorkouts.length;
   const completedWorkouts = thisWeeksWorkouts.filter(w => w.completed).length;
   const totalExercises = thisWeeksWorkouts.reduce((sum, w) => sum + w.exercises.length, 0);
   const weeklyVolume = muscleGroupStats.reduce((sum, stat) => sum + stat.totalVolume, 0);
 
-  // Calculate consistency (workouts per week)
+
   const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const workoutsByDay = daysOfWeek.map(day => {
     const dayIndex = daysOfWeek.indexOf(day);
@@ -84,7 +84,7 @@ export const MuscleTargets: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Weekly Overview */}
+    
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Weekly Summary</h2>
@@ -134,7 +134,7 @@ export const MuscleTargets: React.FC = () => {
         </div>
       </div>
 
-      {/* Weekly Schedule */}
+   
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Weekly Schedule</h3>
         <div className="grid grid-cols-7 gap-2">
@@ -173,7 +173,7 @@ export const MuscleTargets: React.FC = () => {
         </div>
       </div>
 
-      {/* Enhanced Muscle Group Focus */}
+  
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Muscle Group Focus</h3>
@@ -252,7 +252,7 @@ export const MuscleTargets: React.FC = () => {
                   </div>
                 </div>
                 
-                {/* Progress Bar */}
+               
                 <div className="mt-3">
                   <div className="bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                     <div
@@ -273,7 +273,7 @@ export const MuscleTargets: React.FC = () => {
         )}
       </div>
 
-      {/* Enhanced Recommendations */}
+    
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Smart Recommendations</h3>
         
