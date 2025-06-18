@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { WorkoutExercise } from '../../types/fitness';
 import { useWorkouts } from '../../context/WorkoutContext';
 import { CheckCircle, Circle, TrendingUp, Edit3, Zap, Target, Plus, Minus } from 'lucide-react';
@@ -18,7 +18,12 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
 }) => {
   const { getPerformanceData } = useWorkouts();
   const [isEditing, setIsEditing] = useState(false);
+  const [editingSets, setEditingSets] = useState(exercise.sets);
   
+  useEffect(() => {
+    setEditingSets(exercise.sets);
+  }, [exercise.sets]);
+
   const performanceData = showPerformance ? 
     getPerformanceData(exercise._id, 7) : [];
   const lastWeekMax = performanceData.length > 1 ? 
@@ -39,10 +44,15 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
   };
 
   const handleSetUpdate = (setIndex: number, field: 'reps' | 'weight', value: number) => {
-    const updatedSets = exercise.sets.map((set, index) =>
+    const updatedSets = editingSets.map((set, index) =>
       index === setIndex ? { ...set, [field]: value } : set
     );
-    onUpdate({ sets: updatedSets });
+    setEditingSets(updatedSets);
+  };
+
+  const handleDone = () => {
+    onUpdate({ sets: editingSets });
+    setIsEditing(false);
   };
 
   const handleAddSet = async () => {
@@ -66,7 +76,6 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
       }
     } catch (error) {
       console.error('Failed to add set:', error);
-    
     }
   };
 
@@ -159,7 +168,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
             <div></div>
           </div>
           
-          {exercise.sets.map((set, index) => (
+          {(isEditing ? editingSets : exercise.sets).map((set, index) => (
             <div
               key={`${exercise._id}-set-${index}`}
               className={`grid grid-cols-4 gap-2 items-center p-3 rounded-xl transition-all duration-300 ${
@@ -232,7 +241,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
         
         <div className="mt-4 flex justify-end">
           <button
-            onClick={() => setIsEditing(!isEditing)}
+            onClick={() => isEditing ? handleDone() : setIsEditing(true)}
             className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm font-medium flex items-center px-3 py-1 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
           >
             <Edit3 className="w-4 h-4 mr-1" />
