@@ -5,8 +5,11 @@ module.exports.addSet = async (req, res) => {
     try {
         const { newSet, exercise } = req.body;
         
+        // Remove _id to let MongoDB generate a new one
+        const { _id, ...setDataWithoutId } = newSet;
+        
         // Create the new set
-        const createdSet = await workoutSetModel.create(newSet);
+        const createdSet = await workoutSetModel.create(setDataWithoutId);
         
         // Find the exercise and add the set to it
         const workoutExercise = await workoutExerciseModel.findById(exercise._id);

@@ -118,7 +118,9 @@ module.exports.updateWorkout = async (req, res) => {
                     
                     // Create sets for the exercise
                     for (const setData of exerciseData.sets) {
-                        const newSet = await workoutSetModel.create(setData);
+                        // Remove _id to let MongoDB generate a new one
+                        const { _id, ...setDataWithoutId } = setData;
+                        const newSet = await workoutSetModel.create(setDataWithoutId);
                         setIds.push(newSet._id);
                     }
 
@@ -189,7 +191,9 @@ module.exports.addWorkout = async (req, res) => {
             const setIds = [];
 
             for (let setData of exerciseData.sets) {
-                const newSet = await workoutSetModel.create(setData);
+                // Remove _id to let MongoDB generate a new one
+                const { _id, ...setDataWithoutId } = setData;
+                const newSet = await workoutSetModel.create(setDataWithoutId);
                 setIds.push(newSet._id);
             }
 
