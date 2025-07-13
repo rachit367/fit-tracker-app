@@ -80,9 +80,10 @@ export const TodaysWorkout: React.FC = () => {
         setError(null);
         const xpEarned = getWorkoutXp(todaysWorkout.exercises.length, true);
         
-        await updateWorkout(todaysWorkout._id, { 
+        await updateWorkout(todaysWorkout._id, {
+          ...todaysWorkout,
           completed: true,
-          xpEarned 
+          xpEarned
         });
         
         await axios.get(`${URL}/workout/todaysworkout`, { withCredentials: true });
