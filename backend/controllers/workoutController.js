@@ -135,7 +135,18 @@ module.exports.updateWorkout = async (req, res) => {
                     newExerciseIds.push(newExercise._id);
                 }
 
-                workout.exercises = newExerciseIds;
+                // Instead of using workout.exercises = newExerciseIds; await workout.save();
+                await workoutModel.findByIdAndUpdate(
+                    workoutId,
+                    {
+                        name: workoutData.name,
+                        completed: workoutData.completed,
+                        duration: workoutData.duration,
+                        xpEarned: workoutData.xpEarned,
+                        exercises: newExerciseIds,
+                        // keep the original date
+                    }
+                );
             } catch (exerciseErr) {
                 console.error('Error updating exercises:', exerciseErr);
                 return res.status(500).json({ 
@@ -145,8 +156,6 @@ module.exports.updateWorkout = async (req, res) => {
                 });
             }
         }
-
-        await workout.save();
 
         // Fetch the updated workout with populated data
         const updatedWorkout = await workoutModel.findById(workoutId)
