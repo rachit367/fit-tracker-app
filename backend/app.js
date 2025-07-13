@@ -28,9 +28,11 @@ DB().then(async()=>{
 
 
 const corsOptions = {
-    origin: process.env.FRONTEND_URL,
+    origin: process.env.FRONTEND_URL || 'http://localhost:5173', // fallback for local dev
     credentials: true,
 };
+
+console.log('CORS allowed origin:', corsOptions.origin);
 
 app.use(cors(corsOptions));
 
