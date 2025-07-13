@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Prevent unwanted scrolling during development */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Preserve scroll position during HMR updates */
+body {
+  overflow-anchor: none;
+}
+
+/* Prevent scroll jumping during component updates */
+* {
+  scroll-margin-top: 0;
+}
