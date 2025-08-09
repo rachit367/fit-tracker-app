@@ -2,6 +2,7 @@ const express=require('express');
 const app=express();
 const cors=require('cors');
 const path=require('path');
+const compression = require('compression');
 const jwt=require('jsonwebtoken')
 const DB=require('./config/db');
 const {seedExercises} = require('./config/seedExercise');
@@ -40,6 +41,7 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({extended:true}));
 app.use(cookieParser());
+app.use(compression());
 app.use(express.static(path.join(__dirname,'public')));
 
 

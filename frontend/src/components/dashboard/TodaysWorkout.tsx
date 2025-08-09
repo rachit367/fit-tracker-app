@@ -25,6 +25,7 @@ export const TodaysWorkout: React.FC = () => {
   const [showBuilder, setShowBuilder] = useState(false);
   const todaysWorkout = getTodaysWorkout();
   const [isCompleting, setIsCompleting] = useState(false);
+  const [isUndoing, setIsUndoing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const workoutContainerRef = useRef<HTMLDivElement>(null);
 
@@ -87,7 +88,7 @@ export const TodaysWorkout: React.FC = () => {
         });
         
         await axios.get(`${URL}/workout/todaysworkout`, { withCredentials: true });
-        addXp(xpEarned);
+        await addXp(xpEarned);
         
         setTimeout(() => {
           checkAchievements();
@@ -97,6 +98,27 @@ export const TodaysWorkout: React.FC = () => {
         console.error('Error completing workout:', err);
       } finally {
         setIsCompleting(false);
+      }
+    }
+  };
+
+  const handleUndoComplete = async () => {
+    if (todaysWorkout && user) {
+      try {
+        setIsUndoing(true);
+        setError(null);
+        const xpToRevert = todaysWorkout.xpEarned ?? getWorkoutXp(todaysWorkout.exercises.length, true);
+        await updateWorkout(todaysWorkout._id, {
+          ...todaysWorkout,
+          completed: false,
+          xpEarned: 0
+        });
+        await addXp(-xpToRevert);
+      } catch (err) {
+        setError('Failed to undo completion. Please try again.');
+        console.error('Error undoing workout completion:', err);
+      } finally {
+        setIsUndoing(false);
       }
     }
   };
@@ -280,10 +302,17 @@ export const TodaysWorkout: React.FC = () => {
           </div>
           <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Workout Completed! 🎉</h3>
           <p className="text-gray-600 dark:text-gray-400 mb-4">You earned {todaysWorkout.xpEarned || potentialXp} XP!</p>
-          <div className="inline-flex items-center text-green-600 dark:text-green-400 font-medium">
+          <div className="inline-flex items-center text-green-600 dark:text-green-400 font-medium mb-4">
             <Zap className="w-5 h-5 mr-2" />
             Keep up the amazing work!
           </div>
+          <button
+            onClick={handleUndoComplete}
+            disabled={isUndoing}
+            className="bg-white text-gray-800 dark:text-gray-200 border border-gray-300 dark:border-gray-600 px-6 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+          >
+            {isUndoing ? 'Reverting...' : 'Undo Complete (remove XP)'}
+          </button>
         </div>
       )}
     </div>

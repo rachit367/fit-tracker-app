@@ -112,15 +112,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const addXp = async (amount: number) => {
     if (user) {
-      const newXp = user.xp + amount;
+      const tentativeXp = user.xp + amount;
+      const newXp = Math.max(0, tentativeXp);
       const newLevel = calculateLevel(newXp);
       let level = user.level;
-      if(newLevel>level){
-        level=newLevel;
-        console.log(`Level up! You're now level ${level}!`);
+      if (newLevel !== level) {
+        level = newLevel;
+        if (newLevel > user.level) {
+          console.log(`Level up! You're now level ${level}!`);
+        }
       }
 
-      const updatedUser=await axios.put(`${URL}/dashboard/xp`,{id:user._id,xp:newXp,level:level},{ withCredentials: true })
+      const updatedUser = await axios.put(`${URL}/dashboard/xp`, { id: user._id, xp: newXp, level: level }, { withCredentials: true });
       setUser(updatedUser.data);
     }
   };

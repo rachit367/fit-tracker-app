@@ -1,15 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { WorkoutProvider } from './context/WorkoutContext';
 import { LoginForm } from './components/auth/LoginForm';
 import { RegisterForm } from './components/auth/RegisterForm';
 import { Dashboard } from './components/dashboard/Dashboard';
-import { ProfileSettings } from './components/profile/ProfileSettings';
+// import { ProfileSettings } from './components/profile/ProfileSettings';
+const ProfileSettings = React.lazy(() => import('./components/profile/ProfileSettings').then(m => ({ default: m.ProfileSettings })));
 import { LoadingSpinner } from './components/ui/LoadingSpinner';
 import { Settings, Dumbbell } from 'lucide-react';
 import { Toaster } from 'react-hot-toast';
 import { initScrollPreservation } from './utils/scrollPreservation';
+import { installAxiosInterceptors } from './utils/axiosSetup';
 
 const AppContent: React.FC = () => {
   const { user, isLoading } = useAuth();
@@ -20,6 +22,11 @@ const AppContent: React.FC = () => {
   useEffect(() => {
     const cleanup = initScrollPreservation();
     return cleanup;
+  }, []);
+
+  // Install axios interceptors once
+  useEffect(() => {
+    installAxiosInterceptors();
   }, []);
 
   if (isLoading) {
@@ -66,7 +73,9 @@ const AppContent: React.FC = () => {
         <Dashboard />
 
         {showProfile && (
-          <ProfileSettings onClose={() => setShowProfile(false)} />
+          <Suspense fallback={<div className="fixed inset-0 flex items-center justify-center"><LoadingSpinner size="md" /></div>}>
+            <ProfileSettings onClose={() => setShowProfile(false)} />
+          </Suspense>
         )}
       </div>
     </WorkoutProvider>
